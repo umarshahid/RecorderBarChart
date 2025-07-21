@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIS PDUs Per Second - Live Recorder</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 1.6rem;
+      color: #58a6ff;
+    }
+    #chart-container {
+      width: 100vw;
+      height: 450px;
+      background: #161b22;
+      padding: 15px;
+      border-radius: 10px;
+      box-sizing: border-box;
+      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.5);
+      display: none; /* Hidden until connection established */
+    }
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #8b949e;
+    }
+    .btn {
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    .btn:hover {
+      transform: scale(1.1);
+    }
+    .btn-red {
+      background: linear-gradient(to right, #ff4b4b, #c91818);
+      box-shadow: 0 4px 12px rgba(255, 75, 75, 0.5);
+    }
+    .btn-blue {
+      background: linear-gradient(to right, #1f6feb, #1158c7);
+      box-shadow: 0 4px 12px rgba(31, 111, 235, 0.5);
+    }
+    #controls {
+      display: none; /* Hidden until connection established */
+      margin-top: 15px;
+    }
+
+    /* Connection Dialog */
+    #connection-dialog {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 300px;
+    }
+    #connection-dialog input {
+      width: 90%;
+      padding: 8px;
+      margin: 8px 0;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #0d1117;
+      color: #c9d1d9;
+    }
+    #connect-btn {
+      margin-top: 10px;
+      width: 100%;
+      background: linear-gradient(to right, #1f6feb, #1158c7);
+      border: none;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    #connect-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(31, 111, 235, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Connection Dialog -->
+  <div id="connection-dialog">
+    <h2 style="color:#58a6ff;">Connect to DIS</h2>
+    <input type="text" id="multicast-ip" placeholder="Multicast IP Address">
+    <input type="number" id="multicast-port" placeholder="Multicast Port">
+    <input type="number" id="exercise-id" placeholder="Exercise ID">
+    <input type="number" id="site-id" placeholder="Site ID">
+    <button id="connect-btn">Connect</button>
+  </div>
+
+  <h1 style="display:none;">DIS Recorder - PDUs Per Second</h1>
+  <div id="chart-container">
+    <canvas id="pduChart"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <button id="record-btn" class="btn btn-red">▶</button>
+    <button id="replay-btn" class="btn btn-blue">🔁</button>
+    <button id="jump-start-btn" class="btn btn-blue">⏮</button>
+    <button id="jump-end-btn" class="btn btn-blue">⏭</button>
+    <button id="speed-down-btn" class="btn btn-blue">🔽</button>
+    <button id="speed-up-btn" class="btn btn-blue">🔼</button>
+  </div>
+  <div id="status">Waiting to connect...</div>
+
+  <script>
+    const ctx = document.getElementById('pduChart').getContext('2d');
+    const MAX_BARS = 100;
+    let recording = false, replaying = false, intervalId = null, playbackSpeed = 1000;
+
+    const pduChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: Array(MAX_BARS).fill(''),
+        datasets: [{
+          label: 'PDUs/s',
+          data: Array(MAX_BARS).fill(0),
+          backgroundColor: Array(MAX_BARS).fill('#1f6feb'),
+          barPercentage: 1.0,
+          categoryPercentage: 0.6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        scales: {
+          x: { display: false },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#8b949e' }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    document.getElementById('record-btn').addEventListener('click', () => {
+      recording = !recording;
+      if (recording) {
+        startRecording();
+        document.getElementById('record-btn').textContent = '⏹';
+      } else {
+        stopRecording();
+        document.getElementById('record-btn').textContent = '▶';
+      }
+    });
+
+    document.getElementById('replay-btn').addEventListener('click', () => {
+      replaying = !replaying;
+      if (replaying) {
+        document.getElementById('status').textContent = "Replaying...";
+        document.getElementById('replay-btn').textContent = '⏹';
+      } else {
+        document.getElementById('status').textContent = "Replay stopped.";
+        document.getElementById('replay-btn').textContent = '🔁';
+      }
+    });
+
+    document.getElementById('jump-start-btn').addEventListener('click', () => {
+      document.getElementById('status').textContent = "Jumped to start.";
+      pduChart.data.datasets[0].data = Array(MAX_BARS).fill(0);
+      pduChart.update();
+    });
+
+    document.getElementById('jump-end-btn').addEventListener('click', () => {
+      document.getElementById('status').textContent = "Jumped to end.";
+      // Implement if you have stored historical data
+    });
+
+    document.getElementById('speed-up-btn').addEventListener('click', () => {
+      playbackSpeed = Math.max(200, playbackSpeed - 200);
+      document.getElementById('status').textContent = `Playback Speed: ${1000/playbackSpeed}x`;
+    });
+
+    document.getElementById('speed-down-btn').addEventListener('click', () => {
+      playbackSpeed += 200;
+      document.getElementById('status').textContent = `Playback Speed: ${1000/playbackSpeed}x`;
+    });
+
+    function startRecording() {
+      document.getElementById('status').textContent = "Recording...";
+      intervalId = setInterval(fetchPduData, 1000);
+    }
+
+    function stopRecording() {
+      clearInterval(intervalId);
+      document.getElementById('status').textContent = "Stopped.";
+    }
+
+    async function fetchPduData() {
+      try {
+        const res = await fetch("http://localhost:8000/api/pdus_per_second");
+        const data = await res.json();
+        const pduPerSec = data.pdus_per_second;
+
+        pduChart.data.datasets[0].data.shift();
+        pduChart.data.datasets[0].data.push(pduPerSec);
+
+        pduChart.data.datasets[0].backgroundColor = pduChart.data.datasets[0].data.map(v =>
+          v < 10 ? '#58a6ff' : v < 30 ? '#1f6feb' : '#1158c7'
+        );
+
+        pduChart.update();
+        document.getElementById('status').textContent = `Current: ${pduPerSec} PDUs/s`;
+      } catch (error) {
+        console.error("Error fetching PDU data:", error);
+        document.getElementById('status').textContent = "Error fetching data!";
+      }
+    }
+
+    // ✅ Connection Dialog Handling
+    document.getElementById('connect-btn').addEventListener('click', () => {
+      const ip = document.getElementById('multicast-ip').value;
+      const port = document.getElementById('multicast-port').value;
+      const exerciseId = document.getElementById('exercise-id').value;
+      const siteId = document.getElementById('site-id').value;
+
+      if (!ip || !port || !exerciseId || !siteId) {
+        alert("Please fill all fields!");
+        return;
+      }
+
+      document.getElementById('connection-dialog').style.display = 'none';
+      document.querySelector('h1').style.display = 'block';
+      document.getElementById('chart-container').style.display = 'block';
+      document.getElementById('controls').style.display = 'block';
+      document.getElementById('status').textContent = `Connected to ${ip}:${port} (Exercise ${exerciseId}, Site ${siteId})`;
+    });
+  </script>
+</body>
+</html>
