@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIS PDUs Per Second - Live Recorder</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 1.6rem;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    #chart-container {
+      width: 90%;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.4);
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    #record-btn {
+      margin-top: 20px;
+      background: #ff5f6d;
+      background: linear-gradient(to right, #ff9966, #ff5e62);
+      border: none;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #record-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>DIS Recorder - PDUs Per Second</h1>
+  <div id="chart-container">
+    <canvas id="pduChart"></canvas>
+  </div>
+  <button id="record-btn">▶ Start Recording</button>
+  <div id="status">Waiting to start...</div>
+
+  <script>
+    const ctx = document.getElementById('pduChart').getContext('2d');
+
+    const pduChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: Array(20).fill(''),
+        datasets: [{
+          label: 'PDUs/s',
+          data: Array(20).fill(0),
+          backgroundColor: Array(20).fill('#4bc0c0')
+        }]
+      },
+      options: {
+        animation: {
+          duration: 300
+        },
+        scales: {
+          x: { display: false },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#fff' }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+
+    let recording = false;
+    let intervalId = null;
+
+    document.getElementById('record-btn').addEventListener('click', () => {
+      recording = !recording;
+      if (recording) {
+        startRecording();
+        document.getElementById('record-btn').textContent = '⏹ Stop Recording';
+      } else {
+        stopRecording();
+        document.getElementById('record-btn').textContent = '▶ Start Recording';
+      }
+    });
+
+    function startRecording() {
+      document.getElementById('status').textContent = "Recording...";
+      intervalId = setInterval(fetchPduData, 1000); // 1-second updates
+    }
+
+    function stopRecording() {
+      clearInterval(intervalId);
+      document.getElementById('status').textContent = "Stopped.";
+    }
+    
+    async function fetchPduData() {
+      try {
+        // Replace with your actual API endpoint:
+        const res = await fetch("http://localhost:8000/api/pdus_per_second");
+
+        const data = await res.json();
+
+        const pduPerSec = data.pdus_per_second ?? Math.floor(Math.random() * 50); // fallback for demo
+
+        // Push new data, remove oldest
+        pduChart.data.datasets[0].data.shift();
+        pduChart.data.datasets[0].data.push(pduPerSec);
+
+        // Dynamic color like WhatsApp (higher = more red)
+        pduChart.data.datasets[0].backgroundColor = pduChart.data.datasets[0].data.map(v =>
+          v < 10 ? '#4bc0c0' : v < 30 ? '#ffcd56' : '#ff6384'
+        );
+
+        pduChart.update();
+        document.getElementById('status').textContent = `Current: ${pduPerSec} PDUs/s`;
+      } catch (error) {
+        console.error("Error fetching PDU data:", error);
+        document.getElementById('status').textContent = "Error fetching data!";
+      }
+    }
+  </script>
+</body>
+</html>
