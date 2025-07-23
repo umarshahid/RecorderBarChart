@@ -4,137 +4,573 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DIS PDUs Per Second - Live Recorder</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
+  <!-- <style>
     body {
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background: #0d1117;
+  color: #c9d1d9;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* ✅ Use flexbox instead of vertical centering */
+}
+
+h1 {
+  margin: 10px 0;
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: #58a6ff;
+  text-align: center;
+}
+
+/* === CHART CONTAINER === */
+#chart-container {
+  flex: 1 1 auto;  /* ✅ Take remaining space */
+  width: 100%;
+  background: #161b22;
+  padding: 15px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.5);
+  display: none;
+  overflow: hidden;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* === TOOLBAR === */
+.toolbar-container {
+  flex: 0 0 auto;
+  margin: 5px auto;
+  padding: 9px;
+  display: none;
+  justify-content: center;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn {
+  border: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(22, 27, 34, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+.btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 8px rgba(255,255,255,0.2);
+}
+.btn svg {
+  width: 28px;
+  height: 28px;
+  fill: white;
+}
+.btn-red svg circle {
+  fill: red;
+}
+
+/* === SEEK BAR === */
+#seek-container {
+  flex: 0 0 auto;
+  width: 90%;
+  margin: 5px auto;
+  display: none;
+}
+#seek-bar {
+  width: 100%;
+  appearance: none;
+  height: 6px;
+  background: #30363d;
+  border-radius: 4px;
+  outline: none;
+}
+#seek-bar::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: red;
+  border-radius: 50%;
+  cursor: pointer;
+}
+#time-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+/* === CONNECTION DIALOG === */
+#connection-dialog {
+  background: #161b22;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 300px;
+  margin: auto;
+}
+#connection-dialog input {
+  width: 90%;
+  padding: 8px;
+  margin: 8px 0;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  background: #0d1117;
+  color: #c9d1d9;
+}
+#connect-btn {
+  margin-top: 10px;
+  width: 100%;
+  background: linear-gradient(to right, #1f6feb, #1158c7);
+  border: none;
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+#connect-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(31, 111, 235, 0.5);
+}
+
+/* === STATUS BAR === */
+.status-bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  color: #8b949e;
+  font-size: 14px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+#connection-info, #status {
+  flex: 1 1 auto;
+  min-width: 150px;
+  word-wrap: break-word;
+  text-align: left;
+  font-weight: bold;
+  color: #8b949e;
+}
+#status {
+  text-align: right;
+}
+
+    /* body {
       font-family: "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #1f1c2c, #928dab);
-      color: white;
+      background: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
     }
     h1 {
       margin-bottom: 10px;
       font-weight: 600;
       font-size: 1.6rem;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+      color: #58a6ff;
     }
     #chart-container {
+      flex: 1 1 auto; /* ✅ Expands to take all available space */
+      width: 100%;
+      background: #161b22;
+      padding: 15px;
+      border-radius: 10px;
+      box-sizing: border-box;
+      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+
+    /* ✅ Glassmorphism Toolbar */
+    .toolbar-container {
+      position: relative;
+      margin-top: 5px;
+      padding: 9px;
+      display: none;
+      justify-content: center;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    }
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      border: none;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(22, 27, 34, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    .btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 8px rgba(255,255,255,0.2);
+    }
+    .btn svg {
+      width: 28px;
+      height: 28px;
+      fill: white;
+    }
+    .btn-red svg circle {
+      fill: red;
+    }
+
+    /* Seek Bar */
+    #seek-container {
       width: 90%;
-      max-width: 600px;
-      background: rgba(255, 255, 255, 0.1);
+      margin-top: 5px;
+      display: none;
+    }
+    #seek-bar {
+      width: 100%;
+      appearance: none;
+      height: 6px;
+      background: #30363d;
+      border-radius: 4px;
+      outline: none;
+    }
+    #seek-bar::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      background: red;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    #time-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    /* Connection Dialog */
+    #connection-dialog {
+      background: #161b22;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.4);
+      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 300px;
     }
-    #status {
+    #connection-dialog input {
+      width: 90%;
+      padding: 8px;
+      margin: 8px 0;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #0d1117;
+      color: #c9d1d9;
+    }
+    #connect-btn {
       margin-top: 10px;
-      font-size: 0.9rem;
-      opacity: 0.8;
-    }
-    #record-btn {
-      margin-top: 20px;
-      background: #ff5f6d;
-      background: linear-gradient(to right, #ff9966, #ff5e62);
+      width: 100%;
+      background: linear-gradient(to right, #1f6feb, #1158c7);
       border: none;
       color: white;
-      padding: 12px 20px;
-      border-radius: 30px;
+      padding: 10px;
+      border-radius: 8px;
       font-size: 1rem;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: transform 0.2s ease;
     }
-    #record-btn:hover {
+    #connect-btn:hover {
       transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(31, 111, 235, 0.5);
     }
-  </style>
+
+    .status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap; /* ✅ Allows wrapping on smaller screens */
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+
+    box-sizing: border-box; /* ✅ Prevents overflow due to padding */
+  }
+
+  #connection-info, #status {
+    flex: 1 1 auto;  /* ✅ Allow shrinking/growing */
+    min-width: 150px; /* ✅ Keeps readable width */
+    word-wrap: break-word;
+    text-align: left;
+    font-weight: bold;
+    color: #8b949e;
+  }
+
+
+  #status {
+    text-align: right; /* ✅ Keeps status on right side (wraps below if needed) */
+    font-weight: bold;
+    color: #8b949e;
+  }
+
+  .toolbar-container {
+    flex: 0 0 auto; /* ✅ Takes only required height */
+    margin-top: 5px;
+  }
+  .status-bar {
+    flex: 0 0 auto; /* ✅ Fixed height, always visible at bottom */
+  }
+ */
+
+
+  </style> -->
 </head>
 <body>
 
-  <h1>DIS Recorder - PDUs Per Second</h1>
+  <!-- Connection Dialog -->
+  <div id="connection-dialog">
+    <h2 style="color:#58a6ff;">Connect to DIS</h2>
+    <input type="text" id="multicast-ip" placeholder="Multicast IP Address">
+    <input type="number" id="multicast-port" placeholder="Multicast Port">
+    <input type="number" id="exercise-id" placeholder="Exercise ID">
+    <input type="number" id="site-id" placeholder="Site ID">
+    <button id="connect-btn">Connect</button>
+  </div>
+
+  <h1 style="display:none;">DIScord</h1>
+
   <div id="chart-container">
     <canvas id="pduChart"></canvas>
   </div>
-  <button id="record-btn">▶ Start Recording</button>
-  <div id="status">Waiting to start...</div>
+
+    <!-- Seek Controller -->
+  <div id="seek-container">
+    <input type="range" id="seek-bar" min="0" max="0" value="0">
+    <div id="time-labels">
+      <span id="current-time">00:00:00</span>
+      <span id="total-time">00:00:00</span>
+    </div>
+  </div>
+
+
+  <!-- ✅ Glassmorphism Toolbar -->
+  <div class="toolbar-container" id="controls">
+    <div class="toolbar">
+      <button id="record-btn" class="btn btn-red">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+      </button>
+      <button id="play-btn" class="btn">
+        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+      </button>
+      <button id="stop-btn" class="btn">
+        <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>
+      </button>
+      <button id="jump-start-btn" class="btn">
+        <svg viewBox="0 0 24 24">
+          <polygon points="10,6 10,18 3,12"/><rect x="14" y="6" width="3" height="12"/>
+        </svg>
+      </button>
+      <button id="jump-end-btn" class="btn">
+        <svg viewBox="0 0 24 24">
+          <polygon points="14,6 14,18 21,12"/><rect x="7" y="6" width="3" height="12"/>
+        </svg>
+      </button>
+      <button id="speed-down-btn" class="btn">
+        <svg viewBox="0 0 24 24"><polygon points="4,8 20,8 12,16"/></svg>
+      </button>
+      <button id="speed-up-btn" class="btn">
+        <svg viewBox="0 0 24 24"><polygon points="12,8 4,16 20,16"/></svg>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- <div id="connection-info" style="display:none;">
+  <span id="info-network"></span> | 
+  <span id="info-exercise"></span> | 
+  <span id="info-site"></span>
+  </div>
+
+  <div id="status">Waiting to connect...</div> -->
+
+  <div class="status-bar">
+  <div id="connection-info">
+    <span id="info-network">Network: Not Connected</span> | 
+    <span id="info-exercise">Exercise: N/A</span> | 
+    <span id="info-site">Site: N/A</span>
+  </div>
+  <div id="status">Waiting to connect...</div>
+  </div>
+
 
   <script>
     const ctx = document.getElementById('pduChart').getContext('2d');
+    const MAX_BARS = 100;
+    let recording = false, intervalId = null, playbackSpeed = 1000;
+    let recordedData = [], recordedLabels = [], currentTime = 0;
 
     const pduChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: Array(20).fill(''),
+        labels: Array(MAX_BARS).fill(''),
         datasets: [{
           label: 'PDUs/s',
-          data: Array(20).fill(0),
-          backgroundColor: Array(20).fill('#4bc0c0')
+          data: Array(MAX_BARS).fill(0),
+          backgroundColor: Array(MAX_BARS).fill('#1f6feb'),
+          barPercentage: 1.0,
+          categoryPercentage: 0.6
         }]
       },
       options: {
-        animation: {
-          duration: 300
-        },
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
         scales: {
-          x: { display: false },
+          x: {
+            ticks: { color: '#8b949e', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+          },
           y: {
             beginAtZero: true,
-            grid: { color: 'rgba(255,255,255,0.1)' },
-            ticks: { color: '#fff' }
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#8b949e' }
           }
         },
-        plugins: {
-          legend: { display: false }
-        }
+        plugins: { legend: { display: false } }
       }
     });
 
-    let recording = false;
-    let intervalId = null;
+    function formatTime(seconds) {
+      const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+      const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
 
     document.getElementById('record-btn').addEventListener('click', () => {
       recording = !recording;
       if (recording) {
         startRecording();
-        document.getElementById('record-btn').textContent = '⏹ Stop Recording';
       } else {
         stopRecording();
-        document.getElementById('record-btn').textContent = '▶ Start Recording';
       }
+    });
+
+    document.getElementById('speed-up-btn').addEventListener('click', () => {
+      playbackSpeed = Math.max(200, playbackSpeed - 200);
+      document.getElementById('status').textContent = `Playback Speed: ${(1000/playbackSpeed).toFixed(1)}x`;
+    });
+
+    document.getElementById('speed-down-btn').addEventListener('click', () => {
+      playbackSpeed += 200;
+      document.getElementById('status').textContent = `Playback Speed: ${(1000/playbackSpeed).toFixed(1)}x`;
+    });
+
+    document.getElementById('jump-start-btn').addEventListener('click', () => {
+      currentTime = 0;
+      updateSeek();
+    });
+
+    document.getElementById('jump-end-btn').addEventListener('click', () => {
+      currentTime = recordedData.length - 1;
+      updateSeek();
+    });
+
+    document.getElementById('seek-bar').addEventListener('input', (e) => {
+      currentTime = parseInt(e.target.value, 10);
+      updateSeek();
     });
 
     function startRecording() {
       document.getElementById('status').textContent = "Recording...";
-      intervalId = setInterval(fetchPduData, 1000); // 1-second updates
+      intervalId = setInterval(fetchPduData, 1000);
     }
 
     function stopRecording() {
       clearInterval(intervalId);
       document.getElementById('status').textContent = "Stopped.";
     }
-    
+
     async function fetchPduData() {
       try {
-        // Replace with your actual API endpoint:
         const res = await fetch("http://localhost:8000/api/pdus_per_second");
-
         const data = await res.json();
+        const pduPerSec = data.pdus_per_second;
 
-        const pduPerSec = data.pdus_per_second ?? Math.floor(Math.random() * 50); // fallback for demo
+        recordedData.push(pduPerSec);
+        recordedLabels.push(formatTime(recordedData.length));
+        document.getElementById('seek-bar').max = recordedData.length - 1;
+        document.getElementById('seek-bar').value = recordedData.length - 1;
+        document.getElementById('total-time').textContent = formatTime(recordedData.length);
+        document.getElementById('current-time').textContent = formatTime(recordedData.length);
 
-        // Push new data, remove oldest
         pduChart.data.datasets[0].data.shift();
         pduChart.data.datasets[0].data.push(pduPerSec);
 
-        // Dynamic color like WhatsApp (higher = more red)
-        pduChart.data.datasets[0].backgroundColor = pduChart.data.datasets[0].data.map(v =>
-          v < 10 ? '#4bc0c0' : v < 30 ? '#ffcd56' : '#ff6384'
-        );
+        pduChart.data.labels.shift();
+        pduChart.data.labels.push(recordedLabels[recordedLabels.length - 1]);
 
         pduChart.update();
         document.getElementById('status').textContent = `Current: ${pduPerSec} PDUs/s`;
@@ -143,6 +579,63 @@
         document.getElementById('status').textContent = "Error fetching data!";
       }
     }
+
+    function updateSeek() {
+      document.getElementById('seek-bar').value = currentTime;
+      document.getElementById('current-time').textContent = formatTime(currentTime);
+
+      const value = recordedData[currentTime] || 0;
+      pduChart.data.datasets[0].data.shift();
+      pduChart.data.datasets[0].data.push(value);
+
+      pduChart.data.labels.shift();
+      pduChart.data.labels.push(recordedLabels[currentTime] || '');
+      pduChart.update();
+    }
+
+    // document.getElementById('connect-btn').addEventListener('click', () => {
+    //   const ip = document.getElementById('multicast-ip').value;
+    //   const port = document.getElementById('multicast-port').value;
+    //   const exerciseId = document.getElementById('exercise-id').value;
+    //   const siteId = document.getElementById('site-id').value;
+
+    //   if (!ip || !port || !exerciseId || !siteId) {
+    //     alert("Please fill all fields!");
+    //     return;
+    //   }
+
+    //   document.getElementById('connection-dialog').style.display = 'none';
+    //   document.querySelector('h1').style.display = 'block';
+    //   document.getElementById('chart-container').style.display = 'block';
+    //   document.getElementById('controls').style.display = 'flex';
+    //   document.getElementById('seek-container').style.display = 'block';
+    //   document.getElementById('status').textContent = `Connected to ${ip}:${port} (Exercise ${exerciseId}, Site ${siteId})`;
+    // });
+    document.getElementById('connect-btn').addEventListener('click', () => {
+  const ip = document.getElementById('multicast-ip').value;
+  const port = document.getElementById('multicast-port').value;
+  const exerciseId = document.getElementById('exercise-id').value;
+  const siteId = document.getElementById('site-id').value;
+
+  if (!ip || !port || !exerciseId || !siteId) {
+    alert("Please fill all fields!");
+    return;
+  }
+
+  // ✅ Set Connection Info
+  document.getElementById('info-network').textContent = `Network: ${ip}:${port}`;
+  document.getElementById('info-exercise').textContent = `Exercise ID: ${exerciseId}`;
+  document.getElementById('info-site').textContent = `Site ID: ${siteId}`;
+
+  document.getElementById('connection-dialog').style.display = 'none';
+  document.querySelector('h1').style.display = 'block';
+  document.getElementById('connection-info').style.display = 'inline-block';
+  document.getElementById('chart-container').style.display = 'block';
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('seek-container').style.display = 'block';
+  document.getElementById('status').textContent = `Connected to ${ip}:${port} (Exercise ${exerciseId}, Site ${siteId})`;
+});
+
   </script>
 </body>
 </html>
